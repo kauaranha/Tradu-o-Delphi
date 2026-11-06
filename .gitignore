@@ -1,0 +1,25 @@
+# Compilados
+*.dcu
+*.exe
+*.dll
+*.bpl
+*.dcp
+*.map
+*.drc
+*.rsm
+*.tds
+Win32/
+Win64/
+
+# Arquivos locais da IDE
+__history/
+__recovery/
+*.local
+*.identcache
+*.dsk
+*.~dsk
+*.stat
+*.~*
+
+# Recursos gerados (IDE recria o do projeto; Estilos.res sai do Estilos.rc)
+*.res

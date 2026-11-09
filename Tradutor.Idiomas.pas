@@ -1,24 +1,15 @@
 ﻿unit Tradutor.Idiomas;
 
-{ IRepositorioIdiomas com a lista fixa. Poderia ser trocado por um que lê de
-  JSON/banco (ex.: as linguagens do lngAPL no MIMS) sem mexer na tela. }
+{ Lista de idiomas oferecidos na tela. }
 
 interface
 
-uses
-  Tradutor.Interfaces;
-
 type
-  TRepositorioIdiomasFixo = class(TInterfacedObject, IRepositorioIdiomas)
-  public
-    function Todos: TArray<TIdioma>;
-    function Filtrar(const AFiltro: string): TArray<TIdioma>;
+  TIdioma = record
+    Codigo: string;     // código usado pela API (en, es, zh-CN...)
+    Nome: string;       // nome em português
+    Nativo: string;     // nome no próprio idioma
   end;
-
-implementation
-
-uses
-  System.SysUtils, System.StrUtils, System.Generics.Collections;
 
 const
   IDIOMAS: array[0..30] of TIdioma = (
@@ -55,34 +46,6 @@ const
     (Codigo: 'la';    Nome: 'Latim';                Nativo: 'Latina')
   );
 
-function TRepositorioIdiomasFixo.Todos: TArray<TIdioma>;
-var
-  I: Integer;
-begin
-  SetLength(Result, Length(IDIOMAS));
-  for I := Low(IDIOMAS) to High(IDIOMAS) do
-    Result[I] := IDIOMAS[I];
-end;
-
-function TRepositorioIdiomasFixo.Filtrar(const AFiltro: string): TArray<TIdioma>;
-var
-  Lista: TList<TIdioma>;
-  Idioma: TIdioma;
-begin
-  if Trim(AFiltro) = '' then
-    Exit(Todos);
-
-  Lista := TList<TIdioma>.Create;
-  try
-    for Idioma in IDIOMAS do
-      if ContainsText(Idioma.Nome, AFiltro)
-        or ContainsText(Idioma.Nativo, AFiltro)
-        or StartsText(AFiltro, Idioma.Codigo) then
-        Lista.Add(Idioma);
-    Result := Lista.ToArray;
-  finally
-    Lista.Free;
-  end;
-end;
+implementation
 
 end.

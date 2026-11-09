@@ -98,14 +98,10 @@
 		<DCCReference Include="uPrincipal.pas">
 			<Form>frmPrincipal</Form>
 		</DCCReference>
-		<DCCReference Include="Tradutor.Container.pas"/>
 		<DCCReference Include="Tradutor.Interfaces.pas"/>
-		<DCCReference Include="Tradutor.Http.pas"/>
-		<DCCReference Include="Tradutor.Google.pas"/>
-		<DCCReference Include="Tradutor.MyMemory.pas"/>
-		<DCCReference Include="Tradutor.Decorators.pas"/>
+		<DCCReference Include="Tradutor.Servicos.pas"/>
+		<DCCReference Include="Tradutor.Tela.pas"/>
 		<DCCReference Include="Tradutor.Idiomas.pas"/>
-		<DCCReference Include="Tradutor.FormRtti.pas"/>
 		<RcCompile Include="Estilos.rc">
 			<Form>Estilos.res</Form>
 		</RcCompile>

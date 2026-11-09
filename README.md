@@ -1,58 +1,53 @@
 # Tradução Delphi
 
-Tela VCL (Delphi 12) que traduz um texto — e a própria interface — para 31 idiomas em tempo de execução, usando API de tradução.
+Tela VCL (Delphi 12) que traduz um texto — e a própria interface — para 31 idiomas em tempo de execução.
 
-Projeto de estudo de **interfaces**, **RTTI + atributos** e **injeção de dependência** em Delphi.
+Projeto de estudo de três conceitos: **interface**, **RTTI** e **injeção de dependência**.
 
 ## Como abrir
 
-1. Abra `TradutorCaption.dpr` no RAD Studio 12.
-2. Build (Win32) e execute. Precisa de internet para traduzir.
+Abra `TradutorCaption.dpr` no RAD Studio 12, compile (Win32) e execute. Precisa de internet.
 
-## Como funciona
+## Arquivos
 
-```
-Usuário escolhe idioma → ITradutor → Cache → Google → (falhou?) MyMemory → caption
-```
-
-A chamada HTTP roda em `TTask.Run` e o resultado volta pela `TThread.Queue`, então a tela não trava.
-
-| Unit | Responsabilidade |
+| Unit | O que faz |
 |---|---|
-| `Tradutor.Interfaces` | Contratos `ITradutor`, `IRepositorioIdiomas`, `ITradutorDeForm` e o atributo `[NaoTraduzir]` |
-| `Tradutor.Google` | Endpoint público do Google Translate (sem chave, não oficial) |
-| `Tradutor.MyMemory` | API MyMemory, usada como reserva (sem chave) |
-| `Tradutor.Decorators` | `TTradutorComCache` (thread-safe) e `TTradutorComFallback` |
-| `Tradutor.Idiomas` | Lista dos idiomas e filtro da busca |
-| `Tradutor.FormRtti` | Descobre e traduz os textos de qualquer form via RTTI |
-| `Tradutor.Container` | Container de DI próprio (`Registrar<T>` / `Resolver<T>`) |
-| `Tradutor.Http` | GET HTTP compartilhado |
+| `Tradutor.Interfaces` | A interface `ITradutor` e o atributo `[NaoTraduzir]` |
+| `Tradutor.Servicos` | `TTradutorGoogle` (internet) e `TTradutorFalso` (offline, para testar) |
+| `Tradutor.Tela` | `TTradutorDeTela`: lê e grava os textos do form via RTTI |
+| `Tradutor.Idiomas` | Lista dos idiomas |
 | `uPrincipal` | A tela |
 
-### Injeção de dependência
+## Os três conceitos
 
-O `TradutorCaption.dpr` é o único lugar que conhece as classes concretas:
-
-```pascal
-Container.Registrar<ITradutor>(
-  function: ITradutor
-  begin
-    Result := TTradutorComCache.Create(
-      TTradutorComFallback.Create(TTradutorGoogle.Create, TTradutorMyMemory.Create));
-  end);
-```
-
-Trocar de API (ex.: DeepL com chave) é mudar só esse trecho.
-
-### RTTI
-
-`FTradutorDeForm.Capturar(Self)` percorre os componentes e encontra sozinho `Caption`, `Hint`, `TextHint` e `StateCaptions`. O form só marca as exceções:
+**1. Interface** — a tela só conhece o contrato, não sabe quem traduz:
 
 ```pascal
-[NaoTraduzir] lblCaption: TLabel;            // ignora o componente
-[NaoTraduzir('Caption')] lblFechar: TLabel;  // ignora só o Caption (o Hint traduz)
+ITradutor = interface
+  function Nome: string;
+  function Traduzir(const ATexto, AIdioma: string): string;
+end;
 ```
 
-## Observação
+**2. RTTI** — `TTradutorDeTela` percorre os componentes do form e pergunta a cada um
+"você tem `Caption`, `Hint` ou `TextHint`?". Quem não deve ser traduzido é marcado no form:
 
-O endpoint do Google usado aqui não é oficial e pode limitar requisições. Para produção, implemente `ITradutor` com uma API oficial (Google Cloud Translation, DeepL, Azure Translator).
+```pascal
+[NaoTraduzir] lblCaption: TLabel;
+```
+
+**3. Injeção de dependência** — a tela não cria o tradutor; o `.dpr` entrega pronto:
+
+```pascal
+frmPrincipal.Tradutor := TTradutorGoogle.Create;
+// frmPrincipal.Tradutor := TTradutorFalso.Create;   // testar sem internet
+```
+
+## Fluxo da tradução (`TfrmPrincipal.Traduzir`)
+
+1. Sem idioma escolhido (ou Português)? Mostra o texto original.
+2. Separa o texto do cartão e, se a chave "Traduzir interface" estiver ligada, os textos da tela.
+3. Traduz tudo em segundo plano (`TTask.Run`), sem travar a tela.
+4. Mostra o resultado na thread principal (`TThread.Queue`).
+
+> O endpoint do Google usado aqui não é oficial e pode limitar requisições.

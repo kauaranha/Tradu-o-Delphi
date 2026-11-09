@@ -1,14 +1,12 @@
 ﻿unit Tradutor.Idiomas;
 
-{ Lista de idiomas oferecidos na tela. }
-
 interface
 
 type
   TIdioma = record
-    Codigo: string;     // código usado pela API (en, es, zh-CN...)
-    Nome: string;       // nome em português
-    Nativo: string;     // nome no próprio idioma
+    Codigo: string;
+    Nome: string;
+    Nativo: string;
   end;
 
 const

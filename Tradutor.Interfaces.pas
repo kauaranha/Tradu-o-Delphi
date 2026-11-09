@@ -1,9 +1,5 @@
 ﻿unit Tradutor.Interfaces;
 
-{ CONCEITO 1 - INTERFACE
-  A tela só conhece este contrato. Quem traduz de verdade (Google, DeepL,
-  um tradutor falso para testes...) fica escondido atrás dele. }
-
 interface
 
 type
@@ -13,9 +9,6 @@ type
     function Traduzir(const ATexto, AIdioma: string): string;
   end;
 
-  { CONCEITO 2 - RTTI (atributo)
-    Marque um componente do form com [NaoTraduzir] para que a tradução
-    automática da tela não mexa nele. }
   NaoTraduzirAttribute = class(TCustomAttribute);
 
 implementation

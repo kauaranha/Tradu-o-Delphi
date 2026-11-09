@@ -18,11 +18,7 @@ begin
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmPrincipal, frmPrincipal);
 
-  // CONCEITO 3 - INJEÇÃO DE DEPENDÊNCIA
-  // Quem escolhe o tradutor é o programa, não a tela. Para testar sem internet,
-  // troque pela linha de baixo: a tela continua igual.
   frmPrincipal.Tradutor := TTradutorGoogle.Create;
-  // frmPrincipal.Tradutor := TTradutorFalso.Create;
 
   Application.Run;
 end.

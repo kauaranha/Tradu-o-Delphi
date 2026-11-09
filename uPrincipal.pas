@@ -52,10 +52,10 @@ type
     procedure tglTemaClick(Sender: TObject);
     procedure tglInterfaceClick(Sender: TObject);
   private
-    FTradutor: ITradutor;               // recebido de fora (injeção de dependência)
-    FTradutorDeTela: TTradutorDeTela;   // RTTI: textos da própria tela
-    FIdiomaAtual: Integer;              // índice em IDIOMAS; -1 = nenhum selecionado
-    FRequisicao: Integer;               // ignora respostas de traduções antigas
+    FTradutor: ITradutor;
+    FTradutorDeTela: TTradutorDeTela;
+    FIdiomaAtual: Integer;
+    FRequisicao: Integer;
     FCorCartao, FCorCartaoTexto, FCorRotulo, FCorDestaque: TColor;
     FCorTextoJanela, FCorHover: TColor;
     FMaximizada: Boolean;
@@ -73,7 +73,6 @@ type
   protected
     procedure CreateParams(var Params: TCreateParams); override;
   public
-    /// CONCEITO 3 - INJEÇÃO DE DEPENDÊNCIA: a tela não cria o tradutor, ela o recebe.
     property Tradutor: ITradutor read FTradutor write FTradutor;
   end;
 
@@ -87,18 +86,13 @@ implementation
 uses
   System.StrUtils, System.Threading, Vcl.Clipbrd, Tradutor.Idiomas;
 
-{ ============================================================================ }
-{ Início / fim                                                                 }
-{ ============================================================================ }
-
 procedure TfrmPrincipal.FormCreate(Sender: TObject);
 begin
   FIdiomaAtual := -1;
   FListaWndProcOriginal := lstIdiomas.WindowProc;
   lstIdiomas.WindowProc := ListaWndProc;
-  lblTextoOriginal.Top := 0;   // mantém o rótulo acima do memo (ambos alTop)
+  lblTextoOriginal.Top := 0;
 
-  // RTTI: guarda os textos da tela que podem ser traduzidos
   FTradutorDeTela := TTradutorDeTela.Create;
   FTradutorDeTela.Capturar(Self);
 
@@ -113,10 +107,6 @@ begin
   lstIdiomas.WindowProc := FListaWndProcOriginal;
   FTradutorDeTela.Free;
 end;
-
-{ ============================================================================ }
-{ Tradução - toda a lógica está aqui                                           }
-{ ============================================================================ }
 
 procedure TfrmPrincipal.MostrarOriginal;
 begin
@@ -138,7 +128,6 @@ begin
   Inc(FRequisicao);
   Requisicao := FRequisicao;
 
-  // 1. Nada para traduzir? Mostra o original.
   if (FIdiomaAtual < 0) or (IDIOMAS[FIdiomaAtual].Codigo = 'pt') or (Trim(mmoOriginal.Text) = '') then
   begin
     MostrarOriginal;
@@ -151,7 +140,6 @@ begin
     Exit;
   end;
 
-  // 2. Separa o que vai ser traduzido
   Servico := FTradutor;
   Idioma := IDIOMAS[FIdiomaAtual];
   Texto := Trim(mmoOriginal.Text);
@@ -165,13 +153,12 @@ begin
 
   lblIdiomaAtual.Caption := AnsiUpperCase(Idioma.Nome) + '   •   ' + Idioma.Nativo;
   if (Idioma.Codigo = 'ar') or (Idioma.Codigo = 'iw') then
-    lblCaption.BiDiMode := bdRightToLeft     // árabe e hebraico: direita para a esquerda
+    lblCaption.BiDiMode := bdRightToLeft
   else
     lblCaption.BiDiMode := bdLeftToRight;
   Carregando(True);
   Status('Traduzindo para ' + Idioma.Nome + '...');
 
-  // 3. Traduz em segundo plano (a tela não trava)...
   TTask.Run(
     procedure
     var
@@ -189,12 +176,11 @@ begin
           Erro := E.Message;
       end;
 
-      // 4. ...e mostra o resultado na thread principal
       TThread.Queue(nil,
         procedure
         begin
           if Requisicao <> FRequisicao then
-            Exit;   // o usuário já pediu outra tradução
+            Exit;
           Carregando(False);
           if Erro <> '' then
           begin
@@ -225,7 +211,6 @@ end;
 
 procedure TfrmPrincipal.mmoOriginalChange(Sender: TObject);
 begin
-  // Espera o usuário parar de digitar antes de traduzir
   tmrDigitacao.Enabled := False;
   tmrDigitacao.Enabled := True;
 end;
@@ -253,10 +238,6 @@ begin
   lblStatus.Caption := ATexto;
 end;
 
-{ ============================================================================ }
-{ Lista de idiomas                                                             }
-{ ============================================================================ }
-
 procedure TfrmPrincipal.FiltrarIdiomas(const AFiltro: string);
 var
   I: Integer;
@@ -268,7 +249,7 @@ begin
       if (AFiltro = '') or ContainsText(IDIOMAS[I].Nome, AFiltro)
         or ContainsText(IDIOMAS[I].Nativo, AFiltro) or StartsText(AFiltro, IDIOMAS[I].Codigo) then
       begin
-        lstIdiomas.Items.AddObject(IDIOMAS[I].Nome, TObject(NativeInt(I)));  // guarda o índice
+        lstIdiomas.Items.AddObject(IDIOMAS[I].Nome, TObject(NativeInt(I)));
         if I = FIdiomaAtual then
           lstIdiomas.ItemIndex := lstIdiomas.Items.Count - 1;
       end;
@@ -315,7 +296,6 @@ begin
     CorChip := StyleServices.GetSystemColor(clBtnFace);
   end;
 
-  // Etiqueta com o código à direita
   C.Font.Name := 'Segoe UI';
   C.Font.Style := [fsBold];
   C.Font.Height := -Px(11);
@@ -330,7 +310,6 @@ begin
   C.Font.Color := CorSecundaria;
   DrawText(C.Handle, PChar(Idioma.Codigo), -1, Chip, DT_CENTER or DT_VCENTER or DT_SINGLELINE);
 
-  // Nome em português e nome nativo
   C.Font.Name := 'Segoe UI Semibold';
   C.Font.Style := [];
   C.Font.Height := -Px(14);
@@ -346,20 +325,15 @@ end;
 
 procedure TfrmPrincipal.ListaWndProc(var Msg: TMessage);
 begin
-  // Tira o estado de foco do item para não desenhar o retângulo preto
   if Msg.Msg = CN_DRAWITEM then
     with TWMDrawItem(Msg).DrawItemStruct^ do
       itemState := itemState and not ODS_FOCUS;
   FListaWndProcOriginal(Msg);
 end;
 
-{ ============================================================================ }
-{ Aparência: tema claro/escuro                                                 }
-{ ============================================================================ }
-
 function TfrmPrincipal.Px(AValor: Integer): Integer;
 begin
-  Result := MulDiv(AValor, CurrentPPI, 96);   // acompanha a escala (DPI) do monitor
+  Result := MulDiv(AValor, CurrentPPI, 96);
 end;
 
 procedure TfrmPrincipal.AplicarTema(AEscuro: Boolean);
@@ -405,15 +379,11 @@ begin
   AplicarTema(tglTema.State = tssOn);
 end;
 
-{ ============================================================================ }
-{ Janela sem barra de título                                                   }
-{ ============================================================================ }
-
 procedure TfrmPrincipal.CreateParams(var Params: TCreateParams);
 begin
   inherited;
-  Params.WindowClass.style := Params.WindowClass.style or CS_DROPSHADOW;   // sombra
-  Params.Style := Params.Style or WS_SYSMENU or WS_MINIMIZEBOX;            // barra de tarefas
+  Params.WindowClass.style := Params.WindowClass.style or CS_DROPSHADOW;
+  Params.Style := Params.Style or WS_SYSMENU or WS_MINIMIZEBOX;
 end;
 
 procedure TfrmPrincipal.WMNCHitTest(var Msg: TWMNCHitTest);
@@ -424,7 +394,6 @@ begin
   inherited;
   if FMaximizada then
     Exit;
-  // A margem (Padding) do form funciona como borda para redimensionar
   P := ScreenToClient(Point(Msg.XPos, Msg.YPos));
   Esq := P.X < Padding.Left;
   Dir := P.X >= ClientWidth - Padding.Right;
@@ -449,7 +418,7 @@ begin
   if (Button = mbLeft) and not (ssDouble in Shift) and not FMaximizada then
   begin
     ReleaseCapture;
-    Perform(WM_SYSCOMMAND, SC_DRAGMOVE, 0);   // arrasta a janela
+    Perform(WM_SYSCOMMAND, SC_DRAGMOVE, 0);
   end;
 end;
 
